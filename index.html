@@ -20,7 +20,6 @@
             min-height: 100vh;
             color: #444;
         }
-
         /* ==================== B. CSS SIDEBAR/MENU ==================== */
         #sidebar {
             width: 250px;
@@ -34,14 +33,19 @@
             color: white;
             z-index: 100;
         }
-
+        /* CSS BARU UNTUK LOGO */
+        #sidebar .logo {
+            width: 80%; /* Ukuran logo 80% dari lebar sidebar */
+            height: auto;
+            margin: 0 auto 15px auto; /* Margin atas dan bawah, auto di kiri kanan untuk tengah */
+            display: block;
+        }
         #sidebar h2 {
             text-align: center;
             color: #FFD700;
             margin-bottom: 30px;
             text-shadow: 0 0 5px #FFD700;
         }
-
         .menu-item {
             padding: 15px 20px;
             text-decoration: none;
@@ -51,12 +55,10 @@
             transition: background-color 0.3s, color 0.3s;
             cursor: pointer;
         }
-
         .menu-item:hover, .menu-item.active {
             background-color: #555;
             color: #FFD700;
         }
-
         /* ==================== C. CSS KONTEN UTAMA (Container) ==================== */
         #main-container {
             flex-grow: 1;
@@ -64,7 +66,6 @@
             padding: 20px;
             box-sizing: border-box;
         }
-
         .content-panel {
             max-width: 1000px;
             margin: 0 auto;
@@ -73,7 +74,6 @@
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         }
-
         /* ==================== D. CSS CEK IP ==================== */
         h1 { color: #222; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
         textarea#logInput { width: 100%; height: 200px; padding: 10px; box-sizing: border-box; margin-bottom: 10px; }
@@ -87,7 +87,6 @@
             font-size: 1.5em; font-weight: bold;
             text-shadow: 0 0 5px rgba(255, 255, 255, 1), 0 0 10px rgba(255, 255, 255, 0.8), 0 0 15px currentColor, 0 0 20px currentColor;
         }
-
         /* ==================== E. CSS PREDIKSI BOLA ==================== */
         #content-prediksi-bola {
             background: rgba(0, 0, 0, 0.85); 
@@ -125,15 +124,14 @@
     </style>
 </head>
 <body>
-
     <div id="sidebar">
+        <img src="https://i.postimg.cc/8PMP5890/logo.png" alt="Logo Mancing Duit" class="logo">
+        
         <h2>Menu</h2>
         <a href="#" class="menu-item active" data-content="cek-ip" id="menu-cek-ip">🔍 Cek IP</a>
         <a href="#" class="menu-item" data-content="prediksi-bola" id="menu-prediksi-bola">⚽ PREDIKSI BOLA</a>
     </div>
-
     <div id="main-container">
-
         <div id="content-cek-ip" class="content-panel">
             <div id="running-text">
                 <marquee behavior="scroll" direction="left" scrollamount="10">
@@ -143,45 +141,34 @@
             </div>
             <h1>🔍 Dashboard Analisis IP Login</h1>
             <p>✅Tempelkan data Anda di bawah ini. Tekan F5 untuk membersihkan input.</p>
-
             <textarea id="logInput" placeholder="Tempelkan data Anda di sini..."></textarea>
-
             <button onclick="processData()" id="btn-cek-ip">Klik Disini</button>
-
             <div id="results">
                 <p>Tempelkan data Anda dan tekan "Klik Disini".</p>
             </div>
         </div>
-
         <div id="content-prediksi-bola" class="content-panel" style="display: none;">
             <h2>PREDIKSI BOLA</h2>
             <textarea id="input" placeholder="Masukkan pertandingan di sini..."></textarea><br>
             <button onclick="generateTable()">GENERATE TABEL</button>
             <button onclick="copyHTML()">COPY SEMUA HTML</button>
-
             <div id="output"></div>
-
             <h3 class="hasil-html">📋 Hasil HTML Disini:</h3>
             <textarea id="htmlOutput" readonly></textarea>
         </div>
-
     </div>
-
     <script>
         // --- 1. SCRIPT PENGATUR MENU (CONTENT SWITCHING) ---
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function(e) {
                 e.preventDefault();
-
                 // Hapus kelas 'active' dari semua menu
                 document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
                 
                 // Tambahkan kelas 'active' ke menu yang diklik
                 this.classList.add('active');
-
                 // Sembunyikan semua panel konten
                 document.querySelectorAll('.content-panel').forEach(p => p.style.display = 'none');
-
                 // Tampilkan panel konten yang sesuai
                 const targetId = 'content-' + this.getAttribute('data-content');
                 const targetPanel = document.getElementById(targetId);
@@ -190,7 +177,6 @@
                 }
             });
         });
-
         // --- 2. SCRIPT RESET INPUT KETIKA REFRESH ---
         window.onload = function() {
             // Reset input CEK IP
@@ -202,11 +188,8 @@
             document.getElementById('output').innerHTML = '';
             document.getElementById('htmlOutput').value = '';
         };
-
         // --- 3. SCRIPT CEK IP (Fungsionalitas) ---
-
         const THRESHOLD = 3;
-
         function processData() {
             const rawData = document.getElementById('logInput').value;
             
@@ -214,23 +197,18 @@
                 document.getElementById('results').innerHTML = "<p>⚠️ Harap tempelkan data terlebih dahulu.</p>";
                 return;
             }
-
             const logData = parseRawData(rawData);
             const analysisResults = analyzeLoginData(logData);
             renderResults(analysisResults);
         }
-
         function parseRawData(rawData) {
             const lines = rawData.trim().split('\n');
             const parsedData = [];
-
             lines.forEach(line => {
                 const parts = line.trim().split(/\s{2,}|\t/);
-
                 if (parts.length >= 3) {
                     const userId = parts[0].trim();
                     const ipLogin = parts[2].trim();
-
                     if (userId && ipLogin) {
                         parsedData.push({ userId, ipLogin });
                     }
@@ -238,74 +216,58 @@
             });
             return parsedData;
         }
-
         function analyzeLoginData(data) {
             const ipCounts = {};
             data.forEach(log => {
                 const ip = log.ipLogin;
                 ipCounts[ip] = (ipCounts[ip] || 0) + 1;
             });
-
             const resultsArray = Object.keys(ipCounts).map(ip => ({
                 ipAddress: ip,
                 userCount: ipCounts[ip]
             }));
-
             resultsArray.sort((a, b) => b.userCount - a.userCount);
             return resultsArray;
         }
-
         function renderResults(results) {
             const resultsDiv = document.getElementById('results');
-
             if (results.length === 0) {
                 resultsDiv.innerHTML = "<p>Tidak ada data valid yang ditemukan setelah diproses. Harap cek kembali format data yang ditempelkan.</p>";
                 return;
             }
-
             let html = `<h2>Hasil Analisis: ${results.length} IP Unik</h2>`;
             html += `<p>Data diurutkan dari IP dengan User ID terbanyak. Status "CEK IP INI" jika hitungan >= ${THRESHOLD}.</p>`;
             html += '<table>';
             html += '<thead><tr><th>IP Address</th><th>Total User ID Unik</th><th>Status</th></tr></thead>';
             html += '<tbody>';
-
             results.forEach(item => {
                 const isHigh = item.userCount >= THRESHOLD;
                 const rowClass = isHigh ? 'class="high-count"' : '';
-
                 html += `<tr ${rowClass}>`;
                 html += `<td>${item.ipAddress}</td>`;
                 html += `<td>${item.userCount}</td>`;
                 html += `<td>${isHigh ? '❌ CEK IP INI' : '✅ NORMAL'}</td>`;
                 html += '</tr>';
             });
-
             html += '</tbody></table>';
             resultsDiv.innerHTML = html;
         }
-
-
         // --- 4. SCRIPT PREDIKSI BOLA (Fungsionalitas) ---
         function generateTable() {
             const input = document.getElementById('input').value.trim();
             const lines = input.split('\n').filter(l => l.trim() !== '');
-
             let outputHtmlContent = '';
             let leagueName = '';
             let leagueData = {};
-
             const matchRegex = /^(\d{2}\/\d{2})\s+(\d{2}:\d{2})\s+WIB\s+(.+?)\s+vs\s+(.+?)\s+(\d+\s*[:\-]\s*\d+)$/i;
-
             lines.forEach(line => {
                 const match = line.match(matchRegex);
-
                 if (match) {
                     const date = match[1];
                     const time = match[2];
                     const teamA = match[3].trim();
                     const teamB = match[4].trim();
                     const score = match[5].trim();
-
                     if (!leagueData[leagueName]) leagueData[leagueName] = [];
                     leagueData[leagueName].push([
                         `${date} ${time} WIB`,
@@ -317,7 +279,6 @@
                     if (!leagueData[leagueName]) leagueData[leagueName] = [];
                 }
             });
-
             for (const leagueName in leagueData) {
                 if (leagueData[leagueName].length > 0) {
                     outputHtmlContent += `
@@ -333,7 +294,6 @@
                             </thead>
                             <tbody>
                     `;
-
                     leagueData[leagueName].forEach(match => {
                         outputHtmlContent += `
                             <tr>
@@ -343,15 +303,12 @@
                             </tr>
                         `;
                     });
-
                     outputHtmlContent += `</tbody></table></div>`;
                 }
             }
-
             document.getElementById('output').innerHTML = outputHtmlContent;
             document.getElementById('htmlOutput').value = outputHtmlContent;
         }
-
         function copyHTML() {
             const html = document.getElementById('htmlOutput');
             html.select();
