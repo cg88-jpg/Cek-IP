@@ -121,6 +121,26 @@
         .match-block tbody td {
             background: #111; color: #fff; padding: 8px 12px; border: 1px solid #444; text-align: center;
         }
+        /* ==================== F. CSS HISTORY CEK IP (BARU) ==================== */
+        #content-history-cek-ip h2 { color: #007bff; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        #content-history-cek-ip button { 
+            background-color: #dc3545; /* Merah */
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+        #content-history-cek-ip button:hover {
+            background-color: #c82333;
+        }
+        #content-history-cek-ip table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        #content-history-cek-ip th, #content-history-cek-ip td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        #content-history-cek-ip th { background-color: #f2f2f2; color: #333; font-weight: bold; }
+        .status-cek { background-color: #ffcccc; font-weight: bold; } /* Merah muda untuk status CEK IP */
+        .status-normal { background-color: #e8f5e9; } /* Hijau muda untuk status NORMAL */
     </style>
 </head>
 <body>
@@ -128,6 +148,7 @@
         <img src="https://i.postimg.cc/8PMP5890/logo.png" alt="Logo Mancing Duit" class="logo">
         
         <a href="#" class="menu-item active" data-content="cek-ip" id="menu-cek-ip">🔍 Cek IP</a>
+        <a href="#" class="menu-item" data-content="history-cek-ip" id="menu-history-cek-ip">📜 HISTORY CEK IP</a>
         <a href="#" class="menu-item" data-content="prediksi-bola" id="menu-prediksi-bola">⚽ PREDIKSI BOLA</a>
     </div>
     <div id="main-container">
@@ -146,6 +167,16 @@
                 <p>Tempelkan data Anda dan tekan "Klik Disini".</p>
             </div>
         </div>
+        
+        <div id="content-history-cek-ip" class="content-panel" style="display: none;">
+            <h2>📜 Riwayat Pengecekan IP</h2>
+            <button onclick="clearHistory()">Hapus Semua Riwayat</button>
+            <p style="font-style: italic; color: #555;">(Data riwayat ini hanya mencatat Tanggal, Jam, dan Status, dan tersimpan di browser Anda.)</p>
+            <div id="history-results">
+                <p>Belum ada riwayat pengecekan IP yang tersimpan.</p>
+            </div>
+        </div>
+        
         <div id="content-prediksi-bola" class="content-panel" style="display: none;">
             <h2>PREDIKSI BOLA</h2>
             <textarea id="input" placeholder="Masukkan pertandingan di sini..."></textarea><br>
@@ -157,10 +188,14 @@
         </div>
     </div>
     <script>
+        // Key untuk menyimpan riwayat di localStorage
+        const HISTORY_STORAGE_KEY = 'ipCheckHistory';
+        
         // --- 1. SCRIPT PENGATUR MENU (CONTENT SWITCHING) ---
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function(e) {
                 e.preventDefault();
+                
                 // Hapus kelas 'active' dari semua menu
                 document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
                 
@@ -168,14 +203,21 @@
                 this.classList.add('active');
                 // Sembunyikan semua panel konten
                 document.querySelectorAll('.content-panel').forEach(p => p.style.display = 'none');
+                
                 // Tampilkan panel konten yang sesuai
                 const targetId = 'content-' + this.getAttribute('data-content');
                 const targetPanel = document.getElementById(targetId);
                 if (targetPanel) {
                     targetPanel.style.display = 'block';
                 }
+                
+                // PANGGIL FUNGSI UNTUK MEMUAT RIWAYAT JIKA MENU HISTORY DIPILIH
+                if (this.getAttribute('data-content') === 'history-cek-ip') {
+                    loadHistory();
+                }
             });
         });
+        
         // --- 2. SCRIPT RESET INPUT KETIKA REFRESH ---
         window.onload = function() {
             // Reset input CEK IP
@@ -187,6 +229,7 @@
             document.getElementById('output').innerHTML = '';
             document.getElementById('htmlOutput').value = '';
         };
+        
         // --- 3. SCRIPT CEK IP (Fungsionalitas) ---
         const THRESHOLD = 3;
         function processData() {
@@ -196,25 +239,45 @@
                 document.getElementById('results').innerHTML = "<p>⚠️ Harap tempelkan data terlebih dahulu.</p>";
                 return;
             }
+            
             const logData = parseRawData(rawData);
             const analysisResults = analyzeLoginData(logData);
             renderResults(analysisResults);
+            
+            // Tentukan status riwayat
+            const highCountIPs = analysisResults.filter(item => item.userCount >= THRESHOLD);
+            const status = highCountIPs.length > 0 
+                ? `❌ Ditemukan ${highCountIPs.length} IP di atas batas (${THRESHOLD} User ID)`
+                : '✅ Normal';
+            
+            // Panggil fungsi untuk menyimpan riwayat (Hanya TANGGAL, JAM, STATUS)
+            saveHistory(status); 
         }
+        
         function parseRawData(rawData) {
             const lines = rawData.trim().split('\n');
             const parsedData = [];
             lines.forEach(line => {
                 const parts = line.trim().split(/\s{2,}|\t/);
+                // Kita asumsikan formatnya User ID - Sesuatu - IP Address
                 if (parts.length >= 3) {
                     const userId = parts[0].trim();
                     const ipLogin = parts[2].trim();
                     if (userId && ipLogin) {
                         parsedData.push({ userId, ipLogin });
                     }
+                } else if (parts.length >= 2 && parts[1].includes('.')) {
+                    // Coba deteksi jika hanya ada 2 kolom dan kolom kedua adalah IP
+                    const userId = parts[0].trim();
+                    const ipLogin = parts[1].trim();
+                     if (userId && ipLogin) {
+                        parsedData.push({ userId, ipLogin });
+                    }
                 }
             });
             return parsedData;
         }
+        
         function analyzeLoginData(data) {
             const ipCounts = {};
             data.forEach(log => {
@@ -228,6 +291,7 @@
             resultsArray.sort((a, b) => b.userCount - a.userCount);
             return resultsArray;
         }
+        
         function renderResults(results) {
             const resultsDiv = document.getElementById('results');
             if (results.length === 0) {
@@ -251,14 +315,94 @@
             html += '</tbody></table>';
             resultsDiv.innerHTML = html;
         }
-        // --- 4. SCRIPT PREDIKSI BOLA (Fungsionalitas) ---
+        
+        // --- 4. SCRIPT RIWAYAT (Fungsionalitas History - HANYA TANGGAL/JAM/STATUS) ---
+        
+        function getHistory() {
+            try {
+                const historyJson = localStorage.getItem(HISTORY_STORAGE_KEY);
+                return historyJson ? JSON.parse(historyJson) : [];
+            } catch (e) {
+                console.error("Gagal memuat riwayat dari localStorage:", e);
+                return [];
+            }
+        }
+        
+        function saveHistory(status) {
+            const now = new Date();
+            // Format tanggal dan jam lokal sesuai permintaan
+            const date = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }); 
+            const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); 
+            
+            const newEntry = {
+                date: date,
+                time: time,
+                status: status
+            };
+            
+            const history = getHistory();
+            // Tambahkan entri baru di awal (paling baru di atas)
+            history.unshift(newEntry);
+            
+            // Batasi jumlah entri
+            const MAX_HISTORY = 50; 
+            if (history.length > MAX_HISTORY) {
+                history.length = MAX_HISTORY;
+            }
+            
+            try {
+                localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+            } catch (e) {
+                alert("Peringatan: Gagal menyimpan riwayat. Ruang penyimpanan browser mungkin penuh.");
+                console.error("Gagal menyimpan riwayat:", e);
+            }
+        }
+        
+        function loadHistory() {
+            const history = getHistory();
+            const historyDiv = document.getElementById('history-results');
+            
+            if (history.length === 0) {
+                historyDiv.innerHTML = '<p>Belum ada riwayat pengecekan IP yang tersimpan.</p>';
+                return;
+            }
+            
+            let html = '<table>';
+            html += '<thead><tr><th>Tanggal</th><th>Jam</th><th>Status Pengecekan</th></tr></thead>';
+            html += '<tbody>';
+            
+            history.forEach(entry => {
+                // Tentukan kelas berdasarkan status
+                const rowClass = entry.status.startsWith('❌') ? 'class="status-cek"' : 'class="status-normal"';
+                html += `<tr ${rowClass}>`;
+                html += `<td>${entry.date}</td>`;
+                html += `<td>${entry.time}</td>`;
+                html += `<td>${entry.status}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            historyDiv.innerHTML = html;
+        }
+        
+        function clearHistory() {
+             if (confirm("Apakah Anda yakin ingin menghapus semua riwayat pengecekan IP?")) {
+                localStorage.removeItem(HISTORY_STORAGE_KEY);
+                loadHistory(); // Muat ulang tampilan setelah dihapus
+                alert("Riwayat berhasil dihapus!");
+            }
+        }
+        
+        // --- 5. SCRIPT PREDIKSI BOLA (Fungsionalitas) ---
         function generateTable() {
             const input = document.getElementById('input').value.trim();
             const lines = input.split('\n').filter(l => l.trim() !== '');
             let outputHtmlContent = '';
-            let leagueName = '';
+            let leagueName = 'PREDIKSI TANPA JUDUL';
             let leagueData = {};
-            const matchRegex = /^(\d{2}\/\d{2})\s+(\d{2}:\d{2})\s+WIB\s+(.+?)\s+vs\s+(.+?)\s+(\d+\s*[:\-]\s*\d+)$/i;
+            // Regex diperbarui untuk lebih fleksibel pada spasi
+            const matchRegex = /^(\d{2}\/\d{2})\s+(\d{2}:\d{2})\s+WIB\s+(.+?)\s+vs\s+(.+?)\s+([0-9\s:/-]+)$/i; 
+
             lines.forEach(line => {
                 const match = line.match(matchRegex);
                 if (match) {
@@ -266,7 +410,8 @@
                     const time = match[2];
                     const teamA = match[3].trim();
                     const teamB = match[4].trim();
-                    const score = match[5].trim();
+                    const score = match[5].trim().replace(/\s*:\s*/g, ' - '); // Normalisasi skor ke format "X - Y"
+                    
                     if (!leagueData[leagueName]) leagueData[leagueName] = [];
                     leagueData[leagueName].push([
                         `${date} ${time} WIB`,
@@ -274,15 +419,20 @@
                         score
                     ]);
                 } else {
-                    leagueName = line.trim().toUpperCase();
-                    if (!leagueData[leagueName]) leagueData[leagueName] = [];
+                    // Jika baris tidak cocok dengan format pertandingan, anggap itu nama liga baru
+                    const tempLeagueName = line.trim().toUpperCase();
+                    if (tempLeagueName !== '') {
+                        leagueName = tempLeagueName;
+                        if (!leagueData[leagueName]) leagueData[leagueName] = [];
+                    }
                 }
             });
-            for (const leagueName in leagueData) {
-                if (leagueData[leagueName].length > 0) {
+
+            for (const name in leagueData) {
+                if (leagueData[name].length > 0) {
                     outputHtmlContent += `
                         <div class="match-block">
-                          <h3 class="league-title">${leagueName}</h3>
+                          <h3 class="league-title">${name}</h3>
                           <table>
                             <thead>
                               <tr>
@@ -293,7 +443,7 @@
                             </thead>
                             <tbody>
                     `;
-                    leagueData[leagueName].forEach(match => {
+                    leagueData[name].forEach(match => {
                         outputHtmlContent += `
                             <tr>
                               <td>${match[0]}</td>
@@ -305,9 +455,11 @@
                     outputHtmlContent += `</tbody></table></div>`;
                 }
             }
+
             document.getElementById('output').innerHTML = outputHtmlContent;
             document.getElementById('htmlOutput').value = outputHtmlContent;
         }
+
         function copyHTML() {
             const html = document.getElementById('htmlOutput');
             html.select();
@@ -317,5 +469,3 @@
     </script>
 </body>
 </html>
-
-
