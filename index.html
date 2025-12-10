@@ -211,7 +211,7 @@
     </div>
     <script>
         // Key untuk menyimpan riwayat di localStorage
-        const HISTORY_STORAGE_KEY = 'ipCheckHistoryV2'; // Diubah untuk menghindari konflik
+        const HISTORY_STORAGE_KEY = 'ipCheckHistoryV2';
         
         // --- 1. SCRIPT PENGATUR MENU (CONTENT SWITCHING) ---
         document.querySelectorAll('.menu-item').forEach(item => {
@@ -337,8 +337,13 @@
             resultsDiv.innerHTML = html;
         }
         
-        // --- 4. SCRIPT RIWAYAT (Fungsionalitas History - MODIFIED) ---
+        // --- 4. SCRIPT RIWAYAT (Fungsionalitas History - MODIFIED DATE/TIME FORMAT) ---
         
+        // Fungsi pembantu untuk memastikan angka memiliki 2 digit (misal: 05)
+        function padZero(num) {
+            return num.toString().padStart(2, '0');
+        }
+
         function getHistory() {
             try {
                 const historyJson = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -351,15 +356,28 @@
         
         function saveHistory(status, analysisResults) {
             const now = new Date();
-            const date = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }); 
-            const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); 
+            
+            // Format Tanggal: DD Bulan YYYY (misal: 10 Desember 2025)
+            const day = now.getDate();
+            const year = now.getFullYear();
+            const monthNames = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            const month = monthNames[now.getMonth()];
+            const formattedDate = `${day} ${month} ${year}`;
+
+            // Format Jam: HH:MM:SS (misal: 21:28:10)
+            const hour = padZero(now.getHours());
+            const minute = padZero(now.getMinutes());
+            const second = padZero(now.getSeconds());
+            const formattedTime = `${hour}:${minute}:${second}`;
             
             const newEntry = {
-                id: Date.now(), // ID unik untuk detail table
-                date: date,
-                time: time,
+                id: Date.now(), 
+                date: formattedDate,
+                time: formattedTime,
                 status: status,
-                // SIMPAN HASIL ANALISIS LENGKAP DI SINI
                 details: analysisResults
             };
             
